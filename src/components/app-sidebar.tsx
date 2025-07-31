@@ -12,7 +12,6 @@ import {
 import { useSession } from '@/hooks/useSession';
 import { Bot, GalleryVerticalEnd, SquareTerminal } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { PlatformSwitcher } from './PlatformSwitcher';
 
 const data = {
   teams: [
@@ -61,10 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        {/* <TeamSwitcher teams={data.teams} /> */}
-        <PlatformSwitcher />
-      </SidebarHeader>
+      <SidebarHeader></SidebarHeader>
       <SidebarContent>
         {isInst && <NavMain items={data.navInst} />}
       </SidebarContent>
