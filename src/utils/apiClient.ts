@@ -17,19 +17,21 @@ function buildUrl(input: RequestInfo): RequestInfo {
 
 async function fetchWithToken(input: RequestInfo, init?: RequestInit) {
   const accessToken = localStorage.getItem('accessToken');
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    'ngrok-skip-browser-warning': 'true', // Add this line
+    'Content-Type': 'application/json', // Good practice to include
+  };
+
   if (init?.headers) {
-    (init.headers as Record<string, string>)[
-      'Authorization'
-    ] = `Bearer ${accessToken}`;
-  } else {
-    init = {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    };
+    Object.assign(headers, init.headers);
   }
-  return fetch(buildUrl(input), init);
+
+  return fetch(buildUrl(input), {
+    ...init,
+    headers,
+  });
 }
 
 export default fetchWithToken;
