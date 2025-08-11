@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import fetchWithToken from '@/utils/apiClient';
+import { getInstitutions } from '@/utils/api/institutions';
 import {
   Table,
   TableHeader,
@@ -43,9 +43,10 @@ export default function InstitutionsPage() {
   useEffect(() => {
     const fetchInstitutions = async () => {
       try {
-        const res = await fetchWithToken('/institutions');
-        const data = await res.json();
+        const data = await getInstitutions();
         setInstitutions(data);
+      } catch (error) {
+        console.error('Failed to fetch institutions', error);
       } finally {
         setLoading(false);
       }
