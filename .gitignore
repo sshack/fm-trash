@@ -46,3 +46,5 @@ next-env.d.ts
 .env.sentry-build-plugin
 # clerk configuration (can include secrets)
 /.clerk/
+
+/src/generated/prisma

@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import fetchWithToken from '@/utils/apiClient';
-import JourneyForm from '@/components/forms/JourneyForm';
 import InstitutionForm from '@/components/forms/InstitutionForm';
+import JourneyForm from '@/components/forms/JourneyForm';
 import ScreenshotManager from '@/components/ScreenshotManager';
+import { Button } from '@/components/button';
 import {
   Dialog,
   DialogTrigger,
@@ -15,7 +15,6 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/dialog';
-
 import {
   Table,
   TableHeader,
@@ -24,11 +23,10 @@ import {
   TableBody,
   TableCell,
 } from '@/components/table';
-import { Button } from '@/components/button';
 import { Screenshot } from '@/types/models';
 import { deleteJourney } from '@/utils/api/journeys';
 
-interface Journey {
+interface JourneyDetail {
   id: number;
   name: string;
   segment: string;
@@ -41,40 +39,40 @@ interface InstitutionDetail {
   name: string;
   logo: string;
   sector: string;
-  journeys: Journey[];
+  journeys: JourneyDetail[];
 }
 
-export default function InstitutionDetailPage() {
-  const params = useParams();
-  // @ts-ignore
-  const id = params.id as string;
+export default function InstitutionDetails({
+  institutionId,
+}: {
+  institutionId: number;
+}) {
   const [institution, setInstitution] = useState<InstitutionDetail | null>(
     null
   );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchInstitution = async () => {
+    (async () => {
       try {
-        const res = await fetchWithToken(`/api/institutions/${id}`);
+        const res = await fetchWithToken(`/api/institutions/${institutionId}`);
         const data = await res.json();
         setInstitution(data);
       } finally {
         setLoading(false);
       }
-    };
-    fetchInstitution();
-  }, [id]);
+    })();
+  }, [institutionId]);
 
-  if (loading) return <p className="p-4">Loading...</p>;
-  if (!institution) return <p className="p-4">Institution not found.</p>;
+  if (loading) return <p className="p-2">Loading...</p>;
+  if (!institution) return <p className="p-2">Institution not found.</p>;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <img src={institution.logo} alt="logo" className="h-12 w-12" />
+        <img src={institution.logo} alt="logo" className="h-10 w-10" />
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold">{institution.name}</h1>
+          <h2 className="text-xl font-semibold">{institution.name}</h2>
           <p className="text-muted-foreground">Sector: {institution.sector}</p>
         </div>
         <Dialog>
@@ -100,8 +98,7 @@ export default function InstitutionDetailPage() {
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Journeys</h2>
-          {/* Add journey modal */}
+          <h3 className="text-lg font-semibold">Journeys</h3>
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm">+ New Journey</Button>

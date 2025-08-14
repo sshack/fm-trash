@@ -2,7 +2,7 @@ import fetchWithToken from '@/utils/apiClient';
 import { Product } from '@/types/models';
 
 function endpoint(id?: number) {
-  return id ? `/products/${id}` : '/products';
+  return id ? `/api/products/${id}` : '/api/products';
 }
 
 export async function getProducts(): Promise<Product[]> {

@@ -2,7 +2,7 @@ import fetchWithToken from '@/utils/apiClient';
 import { Journey } from '@/types/models';
 
 function endpoint(id?: number) {
-  return id ? `/journeys/${id}` : '/journeys';
+  return id ? `/api/journeys/${id}` : '/api/journeys';
 }
 
 export async function getJourneys(): Promise<Journey[]> {
@@ -14,7 +14,9 @@ export async function getJourneys(): Promise<Journey[]> {
 export async function getJourneysByInstitution(
   institutionId: number
 ): Promise<Journey[]> {
-  const res = await fetchWithToken(`/journeys/institution/${institutionId}`);
+  const res = await fetchWithToken(
+    `/api/journeys?institutionId=${institutionId}`
+  );
   if (!res.ok) throw new Error('Failed to fetch journeys');
   return res.json();
 }

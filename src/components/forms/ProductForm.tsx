@@ -11,29 +11,35 @@ import {
 } from '@/components/form';
 import { Input } from '@/components/input';
 import { Button } from '@/components/button';
-import { createProduct } from '@/utils/api/products';
+import { createProduct, updateProduct } from '@/utils/api/products';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
   onSuccess?: () => void;
+  product?: { id: number; name: string };
 }
 
 interface FormValues {
   name: string;
 }
 
-export default function ProductForm({ onSuccess }: Props) {
+export default function ProductForm({ onSuccess, product }: Props) {
   const { toast } = useToast();
   const form = useForm<FormValues>({
     defaultValues: {
-      name: '',
+      name: product?.name ?? '',
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await createProduct({ name: values.name });
-      toast({ title: 'Product created' });
+      if (product) {
+        await updateProduct(product.id, { name: values.name });
+        toast({ title: 'Product updated' });
+      } else {
+        await createProduct({ name: values.name });
+        toast({ title: 'Product created' });
+      }
       onSuccess?.();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message });
@@ -56,7 +62,7 @@ export default function ProductForm({ onSuccess }: Props) {
             </FormItem>
           )}
         />
-        <Button type="submit">Save</Button>
+        <Button type="submit">{product ? 'Update' : 'Save'}</Button>
       </form>
     </Form>
   );

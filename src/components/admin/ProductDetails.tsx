@@ -1,20 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import fetchWithToken from '@/utils/apiClient';
-import { useToast } from '@/hooks/use-toast';
-import { deleteProductVariant } from '@/utils/api/productVariants';
-import ProductVariantForm from '@/components/forms/ProductVariantForm';
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from '@/components/table';
 import { Button } from '@/components/button';
+import ProductVariantForm from '@/components/forms/ProductVariantForm';
+import { deleteProductVariant } from '@/utils/api/productVariants';
 import {
   Dialog,
   DialogTrigger,
@@ -24,16 +14,19 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/dialog';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/table';
 
 interface Variant {
   id: number;
   name: string;
-  journeys?: Journey[];
-}
-
-interface Journey {
-  id: number;
-  name: string;
+  journeys?: { id: number }[];
 }
 
 interface ProductDetail {
@@ -42,40 +35,33 @@ interface ProductDetail {
   variants: Variant[];
 }
 
-export default function ProductDetailPage() {
-  const params = useParams();
-  // @ts-ignore
-  const id = params.id as string;
+export default function ProductDetails({ productId }: { productId: number }) {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    (async () => {
       try {
-        const res = await fetchWithToken(`/api/products/${id}`);
+        const res = await fetchWithToken(`/api/products/${productId}`);
         const data = await res.json();
         setProduct(data);
       } finally {
         setLoading(false);
       }
-    };
-    fetchProduct();
-  }, [id]);
+    })();
+  }, [productId]);
 
-  if (loading) return <p className="p-4">Loading...</p>;
-  if (!product) return <p className="p-4">Product not found.</p>;
+  if (loading) return <p className="p-2">Loading...</p>;
+  if (!product) return <p className="p-2">Product not found.</p>;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">{product.name}</h1>
+        <h2 className="text-xl font-semibold">{product.name}</h2>
       </div>
-
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Variants</h2>
-          {/* Add variant modal */}
+          <h3 className="text-lg font-semibold">Variants</h3>
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm">+ New Variant</Button>
@@ -111,30 +97,6 @@ export default function ProductDetailPage() {
                 <TableCell>{v.name}</TableCell>
                 <TableCell className="flex items-center gap-2">
                   {v.journeys?.length ?? 0}
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={async () => {
-                      try {
-                        await deleteProductVariant(v.id);
-                        toast({ title: 'Deleted' });
-                        setProduct((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                variants: prev.variants.filter(
-                                  (x) => x.id !== v.id
-                                ),
-                              }
-                            : prev
-                        );
-                      } catch (e: any) {
-                        toast({ title: 'Error', description: e.message });
-                      }
-                    }}
-                  >
-                    Delete
-                  </Button>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button size="sm" variant="secondary">
@@ -157,6 +119,16 @@ export default function ProductDetailPage() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      await deleteProductVariant(v.id);
+                      location.reload();
+                    }}
+                  >
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

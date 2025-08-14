@@ -2,7 +2,7 @@ import fetchWithToken from '@/utils/apiClient';
 import { Institution } from '@/types/models';
 
 function endpoint(id?: number) {
-  return id ? `/institutions/${id}` : '/institutions';
+  return id ? `/api/institutions/${id}` : '/api/institutions';
 }
 
 export async function getInstitutions(): Promise<Institution[]> {

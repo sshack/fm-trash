@@ -11,11 +11,12 @@ import {
 } from '@/components/form';
 import { Input } from '@/components/input';
 import { Button } from '@/components/button';
-import { createInstitution } from '@/utils/api/institutions';
+import { createInstitution, updateInstitution } from '@/utils/api/institutions';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
   onSuccess?: () => void;
+  institution?: { id: number; name: string; sector: string; logo: string };
 }
 
 interface FormValues {
@@ -24,24 +25,33 @@ interface FormValues {
   logo: FileList | null;
 }
 
-export default function InstitutionForm({ onSuccess }: Props) {
+export default function InstitutionForm({ onSuccess, institution }: Props) {
   const { toast } = useToast();
   const form = useForm<FormValues>({
     defaultValues: {
-      name: '',
-      sector: '',
+      name: institution?.name ?? '',
+      sector: institution?.sector ?? '',
       logo: null,
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await createInstitution({
-        name: values.name,
-        sector: values.sector,
-        logo: values.logo ? values.logo[0] : null,
-      });
-      toast({ title: 'Institution created' });
+      if (institution) {
+        await updateInstitution(institution.id, {
+          name: values.name,
+          sector: values.sector,
+          logo: values.logo ? values.logo[0] : null,
+        });
+        toast({ title: 'Institution updated' });
+      } else {
+        await createInstitution({
+          name: values.name,
+          sector: values.sector,
+          logo: values.logo ? values.logo[0] : null,
+        });
+        toast({ title: 'Institution created' });
+      }
       onSuccess?.();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message });
@@ -94,7 +104,7 @@ export default function InstitutionForm({ onSuccess }: Props) {
             </FormItem>
           )}
         />
-        <Button type="submit">Save</Button>
+        <Button type="submit">{institution ? 'Update' : 'Save'}</Button>
       </form>
     </Form>
   );

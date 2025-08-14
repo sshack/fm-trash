@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Segment {
+  PF
+  PJ
+}
+
+enum Channel {
+  WEB
+  MOBILE
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  authId    String   @unique
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Institution {
+  id        Int       @id @default(autoincrement())
+  name      String
+  logo      String
+  sector    String
+  journeys  Journey[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id        Int              @id @default(autoincrement())
+  name      String
+  variants  ProductVariant[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id        Int       @id @default(autoincrement())
+  name      String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+  journeys  Journey[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Journey {
+  id               Int            @id @default(autoincrement())
+  name             String
+  segment          Segment
+  channel          Channel
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  productVariantId Int
+  institution      Institution    @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  institutionId    Int
+  screenshots      Screenshot[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model Screenshot {
+  id          Int      @id @default(autoincrement())
+  type        String?
+  name        String?
+  description String?
+  url         String
+  position    Int
+  journey     Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  journeyId   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

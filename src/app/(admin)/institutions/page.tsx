@@ -23,6 +23,9 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/dialog';
+import { deleteInstitution } from '@/utils/api/institutions';
+import { useToast } from '@/hooks/use-toast';
+import InstitutionDetails from '@/components/admin/InstitutionDetails';
 
 interface Institution {
   id: number;
@@ -39,6 +42,7 @@ interface Journey {
 export default function InstitutionsPage() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchInstitutions = async () => {
@@ -99,13 +103,42 @@ export default function InstitutionsPage() {
                 <TableCell>{inst.name}</TableCell>
                 <TableCell>{inst.sector}</TableCell>
                 <TableCell>{inst.journeys?.length ?? 0}</TableCell>
-                <TableCell>
-                  <Link
-                    href={`/institutions/${inst.id}`}
-                    className="text-primary underline"
+                <TableCell className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="secondary">
+                        Details
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle>Institution #{inst.id}</DialogTitle>
+                      </DialogHeader>
+                      <InstitutionDetails institutionId={inst.id} />
+                      <DialogFooter className="pt-4">
+                        <DialogClose asChild>
+                          <Button variant="secondary">Close</Button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      try {
+                        await deleteInstitution(inst.id);
+                        toast({ title: 'Deleted' });
+                        setInstitutions((prev) =>
+                          prev.filter((i) => i.id !== inst.id)
+                        );
+                      } catch (e: any) {
+                        toast({ title: 'Error', description: e.message });
+                      }
+                    }}
                   >
-                    Details
-                  </Link>
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from '@/components/sidebar';
 import Link from 'next/link';
-import { Home, Building2, Package } from 'lucide-react';
+import { Home, Building2, Package, Images, Route, Layers } from 'lucide-react';
 import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -55,6 +55,39 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <Link href="/products" className="flex items-center gap-2">
                   <Package size={18} />
                   <span>Products</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith('/screenshots')}
+              >
+                <Link href="/screenshots" className="flex items-center gap-2">
+                  <Images size={18} />
+                  <span>Screenshots</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith('/journeys')}
+              >
+                <Link href="/journeys" className="flex items-center gap-2">
+                  <Route size={18} />
+                  <span>Journeys</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith('/variants')}
+              >
+                <Link href="/variants" className="flex items-center gap-2">
+                  <Layers size={18} />
+                  <span>Variants</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

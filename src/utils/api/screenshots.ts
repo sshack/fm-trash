@@ -2,7 +2,7 @@ import fetchWithToken from '@/utils/apiClient';
 import { Screenshot } from '@/types/models';
 
 function endpoint(id?: number) {
-  return id ? `/screenshots/${id}` : '/screenshots';
+  return id ? `/api/screenshots/${id}` : '/api/screenshots';
 }
 
 export interface ScreenshotPayload {
@@ -39,22 +39,35 @@ export async function updateScreenshot(
     description?: string;
     position?: number;
     type?: string;
+    file?: File;
   }
 ): Promise<Screenshot> {
-  // Build a payload with only the fields that are actually provided
-  const payload: Record<string, unknown> = {};
-  if (data.name !== undefined) payload.name = data.name;
-  if (data.description !== undefined) payload.description = data.description;
-  if (data.position !== undefined) payload.position = data.position;
-  if (data.type !== undefined) payload.type = data.type;
-
-  const res = await fetchWithToken(endpoint(id), {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  if (data.file) {
+    const body = new FormData();
+    body.append('file', data.file);
+    if (data.name !== undefined) body.append('name', data.name);
+    if (data.description !== undefined)
+      body.append('description', data.description);
+    if (data.position !== undefined)
+      body.append('position', String(data.position));
+    if (data.type !== undefined) body.append('type', data.type);
+    res = await fetchWithToken(endpoint(id), {
+      method: 'PATCH',
+      body,
+    });
+  } else {
+    const payload: Record<string, unknown> = {};
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.description !== undefined) payload.description = data.description;
+    if (data.position !== undefined) payload.position = data.position;
+    if (data.type !== undefined) payload.type = data.type;
+    res = await fetchWithToken(endpoint(id), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
   if (!res.ok) throw new Error('Failed to update screenshot');
   return res.json();
 }

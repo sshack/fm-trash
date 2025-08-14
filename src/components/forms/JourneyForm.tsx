@@ -12,14 +12,29 @@ import {
 } from '@/components/form';
 import { Input } from '@/components/input';
 import { Button } from '@/components/button';
-import { createJourney } from '@/utils/api/journeys';
+import { createJourney, updateJourney } from '@/utils/api/journeys';
 import { getProducts } from '@/utils/api/products';
 import { useToast } from '@/hooks/use-toast';
 import { Segment, Channel, Product } from '@/types/models';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/select';
 
 interface Props {
   institutionId: number;
   onSuccess?: () => void;
+  journey?: {
+    id: number;
+    name: string;
+    segment: Segment;
+    channel: Channel;
+    productVariantId: number;
+    productVariant?: { product?: { id: number } };
+  };
 }
 
 interface FormValues {
@@ -30,7 +45,11 @@ interface FormValues {
   productVariantId: string;
 }
 
-export default function JourneyForm({ institutionId, onSuccess }: Props) {
+export default function JourneyForm({
+  institutionId,
+  onSuccess,
+  journey,
+}: Props) {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -49,11 +68,15 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
 
   const form = useForm<FormValues>({
     defaultValues: {
-      name: '',
-      segment: Segment.PF,
-      channel: Channel.WEB,
-      productId: '',
-      productVariantId: '',
+      name: journey?.name ?? '',
+      segment: journey?.segment ?? Segment.PF,
+      channel: journey?.channel ?? Channel.WEB,
+      productId: journey?.productVariant?.product?.id
+        ? String(journey.productVariant.product.id)
+        : '',
+      productVariantId: journey?.productVariantId
+        ? String(journey.productVariantId)
+        : '',
     },
   });
 
@@ -64,14 +87,24 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await createJourney({
-        name: values.name,
-        segment: values.segment,
-        channel: values.channel,
-        productVariantId: Number(values.productVariantId),
-        institutionId,
-      });
-      toast({ title: 'Journey created' });
+      if (journey) {
+        await updateJourney(journey.id, {
+          name: values.name,
+          segment: values.segment,
+          channel: values.channel,
+          productVariantId: Number(values.productVariantId),
+        });
+        toast({ title: 'Journey updated' });
+      } else {
+        await createJourney({
+          name: values.name,
+          segment: values.segment,
+          channel: values.channel,
+          productVariantId: Number(values.productVariantId),
+          institutionId,
+        });
+        toast({ title: 'Journey created' });
+      }
       onSuccess?.();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message });
@@ -104,14 +137,15 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
             <FormItem>
               <FormLabel>Segment</FormLabel>
               <FormControl>
-                <select
-                  className="w-full border rounded p-2"
-                  value={field.value}
-                  onChange={field.onChange}
-                >
-                  <option value={Segment.PF}>PF</option>
-                  <option value={Segment.PJ}>PJ</option>
-                </select>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select segment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={Segment.PF}>PF</SelectItem>
+                    <SelectItem value={Segment.PJ}>PJ</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -126,14 +160,15 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
             <FormItem>
               <FormLabel>Channel</FormLabel>
               <FormControl>
-                <select
-                  className="w-full border rounded p-2"
-                  value={field.value}
-                  onChange={field.onChange}
-                >
-                  <option value={Channel.WEB}>WEB</option>
-                  <option value={Channel.MOBILE}>MOBILE</option>
-                </select>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={Channel.WEB}>WEB</SelectItem>
+                    <SelectItem value={Channel.MOBILE}>MOBILE</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -148,22 +183,24 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
             <FormItem>
               <FormLabel>Product</FormLabel>
               <FormControl>
-                <select
-                  className="w-full border rounded p-2"
+                <Select
                   value={field.value}
-                  onChange={(e) => {
-                    field.onChange(e);
-                    // reset variant when product changes
+                  onValueChange={(val) => {
+                    field.onChange(val);
                     form.setValue('productVariantId', '');
                   }}
                 >
-                  <option value="">Select product</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -178,19 +215,22 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
             <FormItem>
               <FormLabel>Product Variant</FormLabel>
               <FormControl>
-                <select
-                  className="w-full border rounded p-2"
+                <Select
                   value={field.value}
-                  onChange={field.onChange}
+                  onValueChange={field.onChange}
                   disabled={!selectedProduct}
                 >
-                  <option value="">Select variant</option>
-                  {selectedProduct?.variants?.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select variant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedProduct?.variants?.map((v) => (
+                      <SelectItem key={v.id} value={String(v.id)}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -198,7 +238,7 @@ export default function JourneyForm({ institutionId, onSuccess }: Props) {
         />
 
         <Button type="submit" disabled={!form.watch('productVariantId')}>
-          Save
+          {journey ? 'Update' : 'Save'}
         </Button>
       </form>
     </Form>

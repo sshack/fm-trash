@@ -2,7 +2,7 @@ import fetchWithToken from '@/utils/apiClient';
 import { ProductVariant } from '@/types/models';
 
 function endpoint(id?: number) {
-  return id ? `/product-variants/${id}` : '/product-variants';
+  return id ? `/api/product-variants/${id}` : '/api/product-variants';
 }
 
 export async function getProductVariants(): Promise<ProductVariant[]> {

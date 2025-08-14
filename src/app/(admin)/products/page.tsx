@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import fetchWithToken from '@/utils/apiClient';
+import ProductForm from '@/components/forms/ProductForm';
+import { deleteProduct } from '@/utils/api/products';
+import { useToast } from '@/hooks/use-toast';
+import ProductDetails from '@/components/admin/ProductDetails';
 import {
   Table,
   TableHeader,
@@ -13,7 +17,7 @@ import {
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/button';
-import ProductForm from '@/components/forms/ProductForm';
+// moved up
 import {
   Dialog,
   DialogTrigger,
@@ -37,11 +41,12 @@ interface Variant {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetchWithToken('/products');
+        const res = await fetchWithToken('/api/products');
         const data = await res.json();
         setProducts(data);
       } finally {
@@ -93,13 +98,63 @@ export default function ProductsPage() {
                 <TableCell>{prod.id}</TableCell>
                 <TableCell>{prod.name}</TableCell>
                 <TableCell>{prod.variants?.length ?? 0}</TableCell>
-                <TableCell>
-                  <Link
-                    href={`/products/${prod.id}`}
-                    className="text-primary underline"
+                <TableCell className="flex gap-2 items-center">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="secondary">
+                        Details
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Product #{prod.id}</DialogTitle>
+                      </DialogHeader>
+                      <ProductDetails productId={prod.id} />
+                      <DialogFooter className="pt-4">
+                        <DialogClose asChild>
+                          <Button variant="secondary">Close</Button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="secondary">
+                        Edit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Product</DialogTitle>
+                      </DialogHeader>
+                      <ProductForm
+                        product={prod}
+                        onSuccess={() => location.reload()}
+                      />
+                      <DialogFooter className="pt-4">
+                        <DialogClose asChild>
+                          <Button variant="secondary">Close</Button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      try {
+                        await deleteProduct(prod.id);
+                        toast({ title: 'Deleted' });
+                        setProducts((prev) =>
+                          prev.filter((p) => p.id !== prod.id)
+                        );
+                      } catch (e: any) {
+                        toast({ title: 'Error', description: e.message });
+                      }
+                    }}
                   >
-                    Details
-                  </Link>
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
