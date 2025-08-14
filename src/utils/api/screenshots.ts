@@ -32,6 +32,13 @@ export async function createScreenshot(
   return res.json();
 }
 
+export async function createScreenshotsBatch(
+  payloads: ScreenshotPayload[]
+): Promise<Screenshot[]> {
+  const promises = payloads.map((payload) => createScreenshot(payload));
+  return Promise.all(promises);
+}
+
 export async function updateScreenshot(
   id: number,
   data: {

@@ -14,16 +14,24 @@ import { Input } from '@/components/input';
 import { useToast } from '@/hooks/use-toast';
 import {
   createScreenshot,
+  createScreenshotsBatch,
   deleteScreenshot,
   updateScreenshot,
 } from '@/utils/api/screenshots';
 import { Screenshot } from '@/types/models';
 import { ArrowUp, ArrowDown, Trash } from 'lucide-react';
+import BatchScreenshotUploadModal from './BatchScreenshotUploadModal';
 
 interface Props {
   journeyId: number;
   initialScreenshots: Screenshot[];
   refresh?: () => void; // callback to reload parent data
+}
+
+interface Journey {
+  id: number;
+  name: string;
+  institution: { name: string };
 }
 
 type EditableShot = Screenshot & { dirty?: boolean };
@@ -39,6 +47,9 @@ export default function ScreenshotManager({
   );
 
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [fileMetadata, setFileMetadata] = useState<{
+    [key: string]: { name: string; description: string; position: number };
+  }>({});
 
   // reorder helpers
   const move = (index: number, dir: -1 | 1) => {
@@ -97,31 +108,47 @@ export default function ScreenshotManager({
   };
 
   const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this screenshot?')) {
+      return;
+    }
+    
     try {
       await deleteScreenshot(id);
-      toast({ title: 'Deleted' });
+      toast({ title: 'Success', description: 'Screenshot deleted successfully' });
       setExisting((prev) => prev.filter((s) => s.id !== id));
       refresh?.();
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message });
+      toast({ 
+        title: 'Error', 
+        description: e.message || 'Failed to delete screenshot',
+        variant: 'destructive'
+      });
+      console.error('Delete error:', e);
     }
   };
 
   const handleUpload = async () => {
     if (newFiles.length === 0) return;
     try {
-      await Promise.all(
-        newFiles.map((file, idx) =>
-          createScreenshot({
-            journeyId,
-            file,
-            position: existing.length + idx,
-            name: file.name,
-          })
-        )
-      );
+      const payloads = newFiles.map((file) => {
+        const meta = fileMetadata[file.name] || {
+          name: file.name,
+          description: '',
+          position: existing.length + newFiles.indexOf(file),
+        };
+        return {
+          journeyId,
+          file,
+          name: meta.name,
+          description: meta.description,
+          position: meta.position,
+        };
+      });
+
+      await createScreenshotsBatch(payloads);
       toast({ title: 'Uploaded' });
       setNewFiles([]);
+      setFileMetadata({});
       refresh?.();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message });
@@ -223,24 +250,99 @@ export default function ScreenshotManager({
 
       {/* Upload new */}
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Add Screenshots</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Add Screenshots</h3>
+          <BatchScreenshotUploadModal 
+            journeys={[{ id: journeyId, name: 'Current Journey', institution: { name: '' } }]}
+            onSuccess={refresh}
+            trigger={<Button variant="outline">Batch Upload</Button>}
+          />
+        </div>
         <input
           type="file"
           accept="image/*"
           multiple
           onChange={(e) => {
-            if (e.target.files) setNewFiles(Array.from(e.target.files));
+            if (e.target.files) {
+              const files = Array.from(e.target.files);
+              setNewFiles(files);
+              // Initialize metadata for each file
+              const metadata: {
+                [key: string]: {
+                  name: string;
+                  description: string;
+                  position: number;
+                };
+              } = {};
+              files.forEach((file, index) => {
+                metadata[file.name] = {
+                  name: file.name,
+                  description: '',
+                  position: existing.length + index,
+                };
+              });
+              setFileMetadata(metadata);
+            }
           }}
         />
+
         {newFiles.length > 0 && (
-          <ul className="list-disc ml-4">
-            {newFiles.map((f) => (
-              <li key={f.name}>{f.name}</li>
-            ))}
-          </ul>
+          <div className="space-y-4">
+            <h4 className="font-medium">Configure Files:</h4>
+            <div className="space-y-2">
+              {newFiles.map((file) => (
+                <div
+                  key={file.name}
+                  className="grid grid-cols-4 gap-2 items-center p-2 border rounded"
+                >
+                  <div className="text-sm font-medium truncate">
+                    {file.name}
+                  </div>
+                  <Input
+                    placeholder="Display name"
+                    value={fileMetadata[file.name]?.name || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFileMetadata((prev) => ({
+                        ...prev,
+                        [file.name]: { ...prev[file.name], name: val },
+                      }));
+                    }}
+                  />
+                  <Input
+                    placeholder="Description"
+                    value={fileMetadata[file.name]?.description || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFileMetadata((prev) => ({
+                        ...prev,
+                        [file.name]: { ...prev[file.name], description: val },
+                      }));
+                    }}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Position"
+                    value={fileMetadata[file.name]?.position || 0}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setFileMetadata((prev) => ({
+                        ...prev,
+                        [file.name]: { ...prev[file.name], position: val },
+                      }));
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
         <Button onClick={handleUpload} disabled={newFiles.length === 0}>
-          Upload
+          Upload{' '}
+          {newFiles.length > 0
+            ? `${newFiles.length} Screenshots`
+            : 'Screenshots'}
         </Button>
       </div>
     </div>
