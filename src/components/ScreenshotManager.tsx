@@ -108,20 +108,19 @@ export default function ScreenshotManager({
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this screenshot?')) {
-      return;
-    }
-    
     try {
       await deleteScreenshot(id);
-      toast({ title: 'Success', description: 'Screenshot deleted successfully' });
+      toast({
+        title: 'Success',
+        description: 'Screenshot deleted successfully',
+      });
       setExisting((prev) => prev.filter((s) => s.id !== id));
       refresh?.();
     } catch (e: any) {
-      toast({ 
-        title: 'Error', 
+      toast({
+        title: 'Error',
         description: e.message || 'Failed to delete screenshot',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       console.error('Delete error:', e);
     }
@@ -252,8 +251,14 @@ export default function ScreenshotManager({
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">Add Screenshots</h3>
-          <BatchScreenshotUploadModal 
-            journeys={[{ id: journeyId, name: 'Current Journey', institution: { name: '' } }]}
+          <BatchScreenshotUploadModal
+            journeys={[
+              {
+                id: journeyId,
+                name: 'Current Journey',
+                institution: { name: '' },
+              },
+            ]}
             onSuccess={refresh}
             trigger={<Button variant="outline">Batch Upload</Button>}
           />

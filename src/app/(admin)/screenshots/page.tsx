@@ -50,10 +50,7 @@ export default function ScreenshotsPage() {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-semibold">Screenshots</h1>
-        <BatchScreenshotUploadModal 
-          journeys={journeys} 
-          onSuccess={loadData}
-        />
+        <BatchScreenshotUploadModal journeys={journeys} onSuccess={loadData} />
       </div>
       {loading ? (
         <p>Loading...</p>
@@ -85,24 +82,25 @@ export default function ScreenshotsPage() {
                   <button
                     className="px-2 py-1 rounded bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
                     onClick={async () => {
-                      if (confirm('Are you sure you want to delete this screenshot?')) {
-                        try {
-                          const res = await fetchWithToken(
-                            `/api/screenshots/${s.id}`,
-                            {
-                              method: 'DELETE',
-                            }
-                          );
-                          if (res.ok) {
-                            await loadData(); // Use loadData instead of location.reload()
-                          } else {
-                            const error = await res.json();
-                            alert(`Failed to delete: ${error.message || 'Unknown error'}`);
+                      try {
+                        const res = await fetchWithToken(
+                          `/api/screenshots/${s.id}`,
+                          {
+                            method: 'DELETE',
                           }
-                        } catch (error) {
-                          console.error('Delete error:', error);
-                          alert('Failed to delete screenshot. Please try again.');
+                        );
+                        if (res.ok) {
+                          await loadData();
+                        } else {
+                          const error = await res.json();
+                          console.error(
+                            `Failed to delete: ${
+                              error.message || 'Unknown error'
+                            }`
+                          );
                         }
+                      } catch (error) {
+                        console.error('Delete error:', error);
                       }
                     }}
                   >

@@ -83,33 +83,32 @@ export default function BatchScreenshotUploadModal({
   };
 
   const updateRow = (id: string, updates: Partial<ScreenshotRow>) => {
-    setRows(
-      rows.map((row) =>
-        row.id === id ? { ...row, ...updates } : row
-      )
-    );
+    setRows(rows.map((row) => (row.id === id ? { ...row, ...updates } : row)));
   };
 
   const moveRow = (fromIndex: number, toIndex: number) => {
     if (toIndex < 0 || toIndex >= rows.length) return;
-    
+
     const newRows = [...rows];
     const [movedRow] = newRows.splice(fromIndex, 1);
     newRows.splice(toIndex, 0, movedRow);
-    
+
     // Update positions
     newRows.forEach((row, index) => {
       row.position = index;
     });
-    
+
     setRows(newRows);
   };
 
-  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>, rowId: string) => {
+  const handleFileDrop = (
+    e: React.DragEvent<HTMLDivElement>,
+    rowId: string
+  ) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter((file) => file.type.startsWith('image/'));
-    
+
     if (imageFiles.length > 0) {
       const file = imageFiles[0];
       updateRow(rowId, {
@@ -119,7 +118,10 @@ export default function BatchScreenshotUploadModal({
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, rowId: string) => {
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    rowId: string
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       updateRow(rowId, {
@@ -151,9 +153,24 @@ export default function BatchScreenshotUploadModal({
         position: row.position,
       }));
 
+      console.log(
+        'Starting batch upload:',
+        payloads.map((p) => ({
+          fileName: p.file.name,
+          journeyId: p.journeyId,
+          position: p.position,
+        }))
+      );
+
       await createScreenshotsBatch(payloads);
-      toast({ title: 'Success', description: 'Screenshots uploaded successfully' });
-      
+
+      toast({
+        title: 'Success',
+        description: `Successfully uploaded ${validRows.length} screenshot${
+          validRows.length > 1 ? 's' : ''
+        }`,
+      });
+
       // Reset form
       setSelectedJourneyId('');
       setRows([
@@ -168,8 +185,20 @@ export default function BatchScreenshotUploadModal({
       setOpen(false);
       onSuccess?.();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to upload screenshots' });
-      console.error(error);
+      console.error('Batch upload error:', error);
+
+      let errorMessage = 'Failed to upload screenshots';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      toast({
+        title: 'Upload Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setUploading(false);
     }
@@ -189,12 +218,15 @@ export default function BatchScreenshotUploadModal({
         <DialogHeader>
           <DialogTitle>Batch Screenshot Upload</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Journey Selection */}
           <div>
             <label className="block text-sm font-medium mb-2">Journey</label>
-            <Select value={selectedJourneyId} onValueChange={setSelectedJourneyId}>
+            <Select
+              value={selectedJourneyId}
+              onValueChange={setSelectedJourneyId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select journey" />
               </SelectTrigger>
@@ -236,13 +268,23 @@ export default function BatchScreenshotUploadModal({
                           if (Math.abs(deltaY) > 30) {
                             const direction = deltaY > 0 ? 1 : -1;
                             moveRow(index, index + direction);
-                            document.removeEventListener('mousemove', handleMouseMove);
+                            document.removeEventListener(
+                              'mousemove',
+                              handleMouseMove
+                            );
                           }
                         };
                         document.addEventListener('mousemove', handleMouseMove);
-                        document.addEventListener('mouseup', () => {
-                          document.removeEventListener('mousemove', handleMouseMove);
-                        }, { once: true });
+                        document.addEventListener(
+                          'mouseup',
+                          () => {
+                            document.removeEventListener(
+                              'mousemove',
+                              handleMouseMove
+                            );
+                          },
+                          { once: true }
+                        );
                       }}
                     >
                       <GripVertical className="w-4 h-4" />
@@ -263,7 +305,8 @@ export default function BatchScreenshotUploadModal({
                         const input = document.createElement('input');
                         input.type = 'file';
                         input.accept = 'image/*';
-                        input.onchange = (e) => handleFileSelect(e as any, row.id);
+                        input.onchange = (e) =>
+                          handleFileSelect(e as any, row.id);
                         input.click();
                       }}
                     >
@@ -292,7 +335,9 @@ export default function BatchScreenshotUploadModal({
                     <Input
                       placeholder="Display name"
                       value={row.name}
-                      onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                      onChange={(e) =>
+                        updateRow(row.id, { name: e.target.value })
+                      }
                     />
                   </div>
 
@@ -301,7 +346,9 @@ export default function BatchScreenshotUploadModal({
                     <Input
                       placeholder="Description"
                       value={row.description}
-                      onChange={(e) => updateRow(row.id, { description: e.target.value })}
+                      onChange={(e) =>
+                        updateRow(row.id, { description: e.target.value })
+                      }
                     />
                   </div>
 
@@ -311,7 +358,9 @@ export default function BatchScreenshotUploadModal({
                       type="number"
                       value={row.position}
                       onChange={(e) =>
-                        updateRow(row.id, { position: parseInt(e.target.value) || 0 })
+                        updateRow(row.id, {
+                          position: parseInt(e.target.value) || 0,
+                        })
                       }
                       className="text-center"
                     />
@@ -344,7 +393,9 @@ export default function BatchScreenshotUploadModal({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={uploading}>
-              {uploading ? 'Uploading...' : `Save ${rows.filter(r => r.file).length} Screenshots`}
+              {uploading
+                ? 'Uploading...'
+                : `Save ${rows.filter((r) => r.file).length} Screenshots`}
             </Button>
           </div>
         </div>

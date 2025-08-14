@@ -28,7 +28,24 @@ export async function createScreenshot(
     method: 'POST',
     body,
   });
-  if (!res.ok) throw new Error('Failed to upload screenshot');
+
+  if (!res.ok) {
+    let errorMessage = 'Failed to upload screenshot';
+    try {
+      const errorData = await res.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+        if (errorData.details) {
+          errorMessage += `: ${errorData.details}`;
+        }
+      }
+    } catch (e) {
+      // If we can't parse the error response, use the status text
+      errorMessage = `Failed to upload screenshot: ${res.status} ${res.statusText}`;
+    }
+    throw new Error(errorMessage);
+  }
+
   return res.json();
 }
 
