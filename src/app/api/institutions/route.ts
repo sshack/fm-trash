@@ -20,7 +20,9 @@ const includeInstitution = {
   },
 } satisfies Prisma.InstitutionInclude;
 
-export async function GET(): Promise<NextResponse<InstitutionWithRelations[]>> {
+export async function GET(): Promise<
+  NextResponse<InstitutionWithRelations[] | { message: string }>
+> {
   try {
     const institutions = await prisma.institution.findMany({
       include: includeInstitution,

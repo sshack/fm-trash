@@ -18,9 +18,10 @@ const includeInstitution = {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id: paramId } = await params;
+  const id = Number(paramId);
   if (Number.isNaN(id))
     return NextResponse.json({ message: 'Invalid id' }, { status: 400 });
   try {
@@ -45,9 +46,10 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id: paramId } = await params;
+  const id = Number(paramId);
   if (Number.isNaN(id))
     return NextResponse.json({ message: 'Invalid id' }, { status: 400 });
   try {
@@ -111,9 +113,10 @@ export async function PATCH(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id: paramId } = await params;
+  const id = Number(paramId);
   if (Number.isNaN(id))
     return NextResponse.json({ message: 'Invalid id' }, { status: 400 });
   try {
