@@ -129,17 +129,61 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: paramId } = await params;
-  const id = Number(paramId);
-  if (Number.isNaN(id))
-    return NextResponse.json({ message: 'Invalid id' }, { status: 400 });
   try {
-    await prisma.screenshot.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    console.log('DELETE /api/screenshots/[id] - Starting deletion process');
+
+    const { id: paramId } = await params;
+    console.log('DELETE - Received paramId:', paramId);
+
+    const id = Number(paramId);
+    if (Number.isNaN(id)) {
+      console.log('DELETE - Invalid id provided:', paramId);
+      return NextResponse.json({ message: 'Invalid id' }, { status: 400 });
+    }
+
+    console.log('DELETE - Deleting screenshot with id:', id);
+
+    // Only delete from database, don't attempt S3 deletion to avoid permission issues
+    const deletedScreenshot = await prisma.screenshot.delete({
+      where: { id },
+      select: { id: true, url: true }, // Select minimal data for logging
+    });
+
+    console.log(
+      'DELETE - Successfully deleted screenshot:',
+      deletedScreenshot.id
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Screenshot deleted successfully',
+      id: deletedScreenshot.id,
+    });
   } catch (error) {
-    console.error(error);
+    console.error('DELETE - Error during deletion:', error);
+
+    // Handle specific Prisma errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'P2025') {
+        console.log('DELETE - Screenshot not found in database');
+        return NextResponse.json(
+          { message: 'Screenshot not found' },
+          { status: 404 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { message: 'Failed to delete screenshot' },
+      {
+        message: 'Failed to delete screenshot',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.stack
+              : undefined
+            : undefined,
+      },
       { status: 500 }
     );
   }
